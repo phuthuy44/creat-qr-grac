@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Tải app Grac </title>
+
+<script>
+(function redirect() {
+  const params = new URLSearchParams(window.location.search);
+
+  const android = params.get("android");
+  const ios = params.get("ios");
+  const fallback = "https://grac.vn";
+
+  const ua = navigator.userAgent.toLowerCase();
+
+  if (ua.includes("android") && android) {
+    location.replace(decodeURIComponent(android));
+  }
+  else if (
+    (ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod")) &&
+    ios
+  ) {
+    location.replace(decodeURIComponent(ios));
+  }
+  else {
+    location.replace(fallback);
+  }
+})();
+</script>
+</head>
+
+<body>
+<p style="text-align:center;margin-top:40px">
+  Đang chuyển hướng đến cửa hàng ứng dụng…
+</p>
+</body>
+</html>

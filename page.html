@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Admin – Tạo QR tải app</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-image: url('https://png.pngtree.com/background/20210715/original/pngtree-plant-palm-leaf-simple-background-picture-image_1325702.jpg');
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.box {
+    background: #fff;
+    padding: 25px;
+    width: auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.1);
+}
+
+input, button {
+    width: auto;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* QR */
+#qr-wrapper {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 15px auto;
+}
+
+#qrcode img {
+    width: 180px;
+    height: 180px;
+}
+
+.qr-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 42px;
+    height: 42px;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 5px;
+    border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<!-- LOGIN -->
+<div id="login">
+    <h3>TẠO QR ĐỂ TẢI APP - LƯU HÀNH NỘI BỘ</h3>
+    <input id="user" placeholder="Tài khoản">
+    <input id="pass" type="password" placeholder="Mật khẩu">
+    <button onclick="login()">Đăng nhập</button>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="hidden">
+    <h3>Cấu hình link tải app</h3>
+
+    <input id="android" placeholder="Link CH Play (Android)">
+    <input id="ios" placeholder="Link App Store (iOS)">
+
+    <button onclick="saveConfig()">Lưu cấu hình & tạo QR</button>
+
+    <div id="qr-wrapper" class="hidden">
+        <div id="qrcode"></div>
+        <img src="images (1).png" class="qr-logo">
+    </div>
+
+    <button onclick="downloadQR()" class="hidden" id="btnDownload">
+        Tải mã QR
+    </button>
+</div>
+
+</div>
+
+<script>
+const loginDiv = document.getElementById("login");
+const adminDiv = document.getElementById("admin");
+const qrDiv = document.getElementById("qrcode");
+const qrWrapper = document.getElementById("qr-wrapper");
+const btnDownload = document.getElementById("btnDownload");
+
+/* ===== LOGIN ===== */
+function login() {
+    if (user.value === "admin" && pass.value === "123456") {
+        loginDiv.classList.add("hidden");
+        adminDiv.classList.remove("hidden");
+        loadConfig();
+    } else {
+        alert("Sai tài khoản hoặc mật khẩu");
+    }
+}
+
+/* ===== STORAGE ===== */
+const STORAGE_KEY = "APP_LINK_CONFIG";
+
+/* ===== LINK QR CỐ ĐỊNH ===== */
+const REDIRECT_LINK = "https://phuthuy44.github.io/qr-grac/redirect.html";
+
+/* ===== LOAD CONFIG ===== */
+function loadConfig() {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+        const cfg = JSON.parse(data);
+        android.value = cfg.android || "";
+        ios.value = cfg.ios || "";
+    }
+}
+
+/* ===== SAVE + CREATE QR ===== */
+function saveConfig() {
+    if (!android.value || !ios.value) {
+        alert("Vui lòng nhập đủ link Android và iOS");
+        return;
+    }
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+            android: android.value,
+            ios: ios.value
+        })
+    );
+
+    createQR();
+}
+
+/* ===== CREATE QR ===== */
+function createQR() {
+    const androidLink = encodeURIComponent(android.value);
+    const iosLink = encodeURIComponent(ios.value);
+
+    const qrLink =
+      "https://phuthuy44.github.io/creat-qr-grac/redirect.html"
+      + "?android=" + androidLink
+      + "&ios=" + iosLink;
+
+    qrDiv.innerHTML = "";
+    qrWrapper.classList.remove("hidden");
+    btnDownload.classList.remove("hidden");
+
+    new QRCode(qrDiv, {
+        text: qrLink,
+        width: 180,
+        height: 180,
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+
+/* ===== DOWNLOAD QR (CÓ LOGO) ===== */
+function downloadQR() {
+    const qrImg = qrDiv.querySelector("img");
+    const logo = document.querySelector(".qr-logo");
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 180;
+    canvas.height = 180;
+    const ctx = canvas.getContext("2d");
+
+    const imgQR = new Image();
+    imgQR.src = qrImg.src;
+
+    imgQR.onload = () => {
+        ctx.drawImage(imgQR, 0, 0, 180, 180);
+
+        const imgLogo = new Image();
+        imgLogo.src = logo.src;
+
+        imgLogo.onload = () => {
+            const size = 42;
+            const x = (180 - size) / 2;
+            const y = (180 - size) / 2;
+
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(x - 5, y - 5, size + 10, size + 10);
+            ctx.drawImage(imgLogo, x, y, size, size);
+
+            const a = document.createElement("a");
+            a.href = canvas.toDataURL();
+            a.download = "qr-tai-app.png";
+            a.click();
+        };
+    };
+}
+</script>
+
+</body>
+</html>
