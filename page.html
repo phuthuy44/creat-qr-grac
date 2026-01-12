@@ -181,32 +181,38 @@ function downloadQR() {
     const qrImg = qrDiv.querySelector("img");
     const logo = document.querySelector(".qr-logo");
 
+    const EXPORT_SIZE = 800;   // KÍCH THƯỚC ẢNH TẢI VỀ
+    const LOGO_SIZE = 160;     // LOGO THEO TỈ LỆ
+
     const canvas = document.createElement("canvas");
-    canvas.width = 180;
-    canvas.height = 180;
+    canvas.width = EXPORT_SIZE;
+    canvas.height = EXPORT_SIZE;
     const ctx = canvas.getContext("2d");
 
     const imgQR = new Image();
     imgQR.src = qrImg.src;
 
     imgQR.onload = () => {
-        ctx.drawImage(imgQR, 0, 0, 180, 180);
+        // Vẽ QR to rõ
+        ctx.drawImage(imgQR, 0, 0, EXPORT_SIZE, EXPORT_SIZE);
 
         const imgLogo = new Image();
         imgLogo.src = logo.src;
 
         imgLogo.onload = () => {
-            const size = 42;
-            const x = (180 - size) / 2;
-            const y = (180 - size) / 2;
+            const x = (EXPORT_SIZE - LOGO_SIZE) / 2;
+            const y = (EXPORT_SIZE - LOGO_SIZE) / 2;
 
+            // Nền trắng cho logo
             ctx.fillStyle = "#fff";
-            ctx.fillRect(x - 5, y - 5, size + 10, size + 10);
-            ctx.drawImage(imgLogo, x, y, size, size);
+            ctx.fillRect(x - 15, y - 15, LOGO_SIZE + 30, LOGO_SIZE + 30);
+
+            // Vẽ logo
+            ctx.drawImage(imgLogo, x, y, LOGO_SIZE, LOGO_SIZE);
 
             const a = document.createElement("a");
-            a.href = canvas.toDataURL();
-            a.download = "qr-tai-app.png";
+            a.href = canvas.toDataURL("image/png");
+            a.download = "qr-tai-app-hd.png";
             a.click();
         };
     };
