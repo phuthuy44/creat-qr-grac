@@ -2,15 +2,22 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Tải app Grac </title>
+<title>Chuyển hướng</title>
 
 <script>
 (function redirect() {
   const params = new URLSearchParams(window.location.search);
 
+  const web = params.get("web");
   const android = params.get("android");
   const ios = params.get("ios");
   const fallback = "https://grac.vn";
+
+  // 👉 ƯU TIÊN WEB
+  if (web) {
+    location.replace(decodeURIComponent(web));
+    return;
+  }
 
   const ua = navigator.userAgent.toLowerCase();
 
@@ -32,7 +39,7 @@
 
 <body>
 <p style="text-align:center;margin-top:40px">
-  Đang chuyển hướng đến cửa hàng ứng dụng…
+  Đang chuyển hướng…
 </p>
 </body>
 </html>

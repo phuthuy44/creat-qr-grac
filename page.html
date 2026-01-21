@@ -2,7 +2,8 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Admin – Tạo QR tải app</title>
+<title>Admin – Tạo QR</title>
+
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
 
 <style>
@@ -19,9 +20,9 @@ body {
 .box {
     background: #fff;
     padding: 25px;
-    width: auto;
     border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    min-width: 320px;
 }
 
 input, button {
@@ -42,7 +43,6 @@ button {
     display: none;
 }
 
-/* QR */
 #qr-wrapper {
     position: relative;
     width: 180px;
@@ -75,7 +75,7 @@ button {
 
 <!-- LOGIN -->
 <div id="login">
-    <h3>TẠO QR ĐỂ TẢI APP - LƯU HÀNH NỘI BỘ</h3>
+    <h3>TẠO QR – NỘI BỘ</h3>
     <input id="user" placeholder="Tài khoản">
     <input id="pass" type="password" placeholder="Mật khẩu">
     <button onclick="login()">Đăng nhập</button>
@@ -83,19 +83,38 @@ button {
 
 <!-- ADMIN -->
 <div id="admin" class="hidden">
-    <h3>Cấu hình link tải app</h3>
+    <h3>Cấu hình QR</h3>
 
-    <input id="android" placeholder="Link CH Play (Android)">
-    <input id="ios" placeholder="Link App Store (iOS)">
+    <!-- RADIO -->
+    <label>
+        <input type="radio" name="qrType" value="app" checked onchange="switchType()">
+        QR tải App
+    </label>
+    <label style="margin-left:15px">
+        <input type="radio" name="qrType" value="web" onchange="switchType()">
+        QR Website
+    </label>
 
-    <button onclick="saveConfig()">Lưu cấu hình & tạo QR</button>
+    <!-- APP FORM -->
+    <div id="appForm">
+        <input id="android" placeholder="Link CH Play (Android)">
+        <input id="ios" placeholder="Link App Store (iOS)">
+    </div>
 
+    <!-- WEB FORM -->
+    <div id="webForm" class="hidden">
+        <input id="webLink" placeholder="Link website (https://...)">
+    </div>
+
+    <button onclick="saveConfig()">Tạo QR</button>
+
+    <!-- QR -->
     <div id="qr-wrapper" class="hidden">
         <div id="qrcode"></div>
         <img src="images (1).png" class="qr-logo">
     </div>
 
-    <button onclick="downloadQR()" class="hidden" id="btnDownload">
+    <button id="btnDownload" class="hidden" onclick="downloadQR()">
         Tải mã QR
     </button>
 </div>
@@ -109,84 +128,80 @@ const qrDiv = document.getElementById("qrcode");
 const qrWrapper = document.getElementById("qr-wrapper");
 const btnDownload = document.getElementById("btnDownload");
 
-/* ===== LOGIN ===== */
+const STORAGE_KEY = "APP_QR_CONFIG";
+const REDIRECT_LINK = "https://phuthuy44.github.io/creat-qr-grac/redirect.html";
+
+/* LOGIN */
 function login() {
     if (user.value === "admin" && pass.value === "123456") {
         loginDiv.classList.add("hidden");
         adminDiv.classList.remove("hidden");
-        loadConfig();
     } else {
         alert("Sai tài khoản hoặc mật khẩu");
     }
 }
 
-/* ===== STORAGE ===== */
-const STORAGE_KEY = "APP_LINK_CONFIG";
+/* SWITCH TYPE */
+function switchType() {
+    const type = document.querySelector('input[name="qrType"]:checked').value;
 
-/* ===== LINK QR CỐ ĐỊNH ===== */
-const REDIRECT_LINK = "https://phuthuy44.github.io/creat-qr-grac/redirect.html";
+    // Hiện / ẩn form
+    appForm.classList.toggle("hidden", type !== "app");
+    webForm.classList.toggle("hidden", type !== "web");
 
-/* ===== LOAD CONFIG ===== */
-function loadConfig() {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-        const cfg = JSON.parse(data);
-        android.value = cfg.android || "";
-        ios.value = cfg.ios || "";
-    }
+    // 🔥 RESET QR CŨ
+    qrDiv.innerHTML = "";
+    qrWrapper.classList.add("hidden");
+    btnDownload.classList.add("hidden");
+    localStorage.removeItem(STORAGE_KEY);
 }
 
-/* ===== SAVE + CREATE QR ===== */
+/* SAVE */
 function saveConfig() {
-    if (!android.value || !ios.value) {
-        alert("Vui lòng nhập đủ link Android và iOS");
-        return;
+    const type = document.querySelector('input[name="qrType"]:checked').value;
+    let cfg = { type };
+
+    if (type === "app") {
+        if (!android.value || !ios.value) {
+            alert("Nhập đủ link Android & iOS");
+            return;
+        }
+        cfg.android = android.value.trim();
+        cfg.ios = ios.value.trim();
+    } else {
+        if (!webLink.value) {
+            alert("Nhập link website");
+            return;
+        }
+
+        // 🔥 BẮT BUỘC CÓ https
+        let link = webLink.value.trim();
+        if (!link.startsWith("http")) {
+            link = "https://" + link;
+        }
+
+        cfg.web = link;
     }
 
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-            android: android.value,
-            ios: ios.value
-        })
-    );
-
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
     createQR();
 }
 
-/* ===== CREATE QR ===== */
-// function createQR() {
-//     const androidLink = encodeURIComponent(android.value);
-//     const iosLink = encodeURIComponent(ios.value);
 
-//     const qrLink =
-//       "https://phuthuy44.github.io/creat-qr-grac/redirect.html"
-//       + "?android=" + androidLink
-//       + "&ios=" + iosLink;
-
-//     qrDiv.innerHTML = "";
-//     qrWrapper.classList.remove("hidden");
-//     btnDownload.classList.remove("hidden");
-
-//     new QRCode(qrDiv, {
-//         text: qrLink,
-//         width: 180,
-//         height: 180,
-//         correctLevel: QRCode.CorrectLevel.H
-//     });
-// }
+/* CREATE QR */
 function createQR() {
-    const androidLink = encodeURIComponent(android.value);
-    const iosLink = encodeURIComponent(ios.value);
+    const cfg = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    let qrLink = REDIRECT_LINK;
 
-    const qrLink =
-      "https://phuthuy44.github.io/creat-qr-grac/redirect.html"
-      + "?android=" + androidLink
-      + "&ios=" + iosLink;
+    if (cfg.type === "web") {
+        qrLink += "?web=" + encodeURIComponent(cfg.web);
+    } else {
+        qrLink += "?android=" + encodeURIComponent(cfg.android)
+               + "&ios=" + encodeURIComponent(cfg.ios);
+    }
 
     qrDiv.innerHTML = "";
 
-    // 👉 TẠO QR GỐC TO
     new QRCode(qrDiv, {
         text: qrLink,
         width: 800,
@@ -194,7 +209,6 @@ function createQR() {
         correctLevel: QRCode.CorrectLevel.H
     });
 
-    // 👉 THU NHỎ HIỂN THỊ
     const img = qrDiv.querySelector("img");
     img.style.width = "180px";
     img.style.height = "180px";
@@ -203,12 +217,11 @@ function createQR() {
     btnDownload.classList.remove("hidden");
 }
 
-/* ===== DOWNLOAD QR (CÓ LOGO) ===== */
+/* DOWNLOAD */
 function downloadQR() {
     const qrImg = qrDiv.querySelector("img");
     const logo = document.querySelector(".qr-logo");
-
-    const size = qrImg.naturalWidth; // 800
+    const size = qrImg.naturalWidth;
 
     const canvas = document.createElement("canvas");
     canvas.width = size;
@@ -219,7 +232,6 @@ function downloadQR() {
     imgQR.src = qrImg.src;
 
     imgQR.onload = () => {
-        // ⚠️ KHÔNG SCALE
         ctx.drawImage(imgQR, 0, 0);
 
         const imgLogo = new Image();
@@ -236,12 +248,11 @@ function downloadQR() {
 
             const a = document.createElement("a");
             a.href = canvas.toDataURL("image/png");
-            a.download = "qr-tai-app-hd.png";
+            a.download = "qr.png";
             a.click();
         };
     };
 }
-
 </script>
 
 </body>
